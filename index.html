@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Bluetooth LED Controller</title>
+<title>Voice Controlled Bluetooth LED</title>
 
 <style>
 
 body{
     background:#111;
     color:white;
-    font-family:Arial, sans-serif;
+    font-family:Arial,sans-serif;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -24,15 +24,10 @@ body{
     padding:40px;
     border-radius:20px;
     text-align:center;
-    box-shadow:0 0 20px rgba(255,255,255,0.1);
-}
-
-h1{
-    margin-bottom:30px;
 }
 
 button{
-    padding:15px 30px;
+    padding:15px 25px;
     margin:10px;
     border:none;
     border-radius:10px;
@@ -41,13 +36,23 @@ button{
 }
 
 .on{
-    background:limegreen;
+    background:green;
     color:white;
 }
 
 .off{
     background:red;
     color:white;
+}
+
+.voice{
+    background:blue;
+    color:white;
+}
+
+#status{
+    margin-top:20px;
+    font-size:18px;
 }
 
 </style>
@@ -57,15 +62,23 @@ button{
 
 <div class="box">
 
-    <h1>Bluetooth LED Control</h1>
+<h1>Voice LED Control</h1>
 
-    <button class="on" onclick="startTone()">
-        LED ON
-    </button>
+<button class="on" onclick="startTone()">
+LED ON
+</button>
 
-    <button class="off" onclick="stopTone()">
-        LED OFF
-    </button>
+<button class="off" onclick="stopTone()">
+LED OFF
+</button>
+
+<button class="voice" onclick="startVoice()">
+🎤 Voice Control
+</button>
+
+<div id="status">
+Waiting...
+</div>
 
 </div>
 
@@ -77,27 +90,26 @@ let gainNode = null;
 
 function startTone(){
 
-    // prevent multiple tones
     if(oscillator){
         return;
     }
 
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    audioContext = new (
+        window.AudioContext ||
+        window.webkitAudioContext
+    )();
 
     oscillator = audioContext.createOscillator();
 
     gainNode = audioContext.createGain();
 
-    // tone type
     oscillator.type = "square";
 
-    // frequency
     oscillator.frequency.setValueAtTime(
         200,
         audioContext.currentTime
     );
 
-    // increase output strength
     gainNode.gain.setValueAtTime(
         1,
         audioContext.currentTime
@@ -108,6 +120,9 @@ function startTone(){
     gainNode.connect(audioContext.destination);
 
     oscillator.start();
+
+    document.getElementById("status").innerText =
+    "LED ON";
 
 }
 
@@ -131,7 +146,6 @@ function stopTone(){
 
     }
 
-    // FULLY CLOSE AUDIO SYSTEM
     if(audioContext){
 
         audioContext.close();
@@ -139,6 +153,49 @@ function stopTone(){
         audioContext = null;
 
     }
+
+    document.getElementById("status").innerText =
+    "LED OFF";
+
+}
+
+function startVoice(){
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    const recognition =
+        new SpeechRecognition();
+
+    recognition.lang = "en-US";
+
+    recognition.start();
+
+    document.getElementById("status").innerText =
+    "Listening...";
+
+    recognition.onresult = function(event){
+
+        const command =
+        event.results[0][0].transcript.toLowerCase();
+
+        document.getElementById("status").innerText =
+        "You said: " + command;
+
+        if(command.includes("light on")){
+
+            startTone();
+
+        }
+
+        if(command.includes("light off")){
+
+            stopTone();
+
+        }
+
+    };
 
 }
 
